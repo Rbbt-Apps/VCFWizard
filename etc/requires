@@ -1,0 +1,5 @@
+rbbt/entity
+rbbt/entity/genomic_mutation
+rbbt/entity/gene
+rbbt/entity/study
+rbbt/entity/study/genotypes

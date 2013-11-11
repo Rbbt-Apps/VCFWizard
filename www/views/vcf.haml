@@ -1,0 +1,36 @@
+- vcf = load_vcf(name)
+- organism = vcf.namespace
+- require 'rbbt/sources/organism'
+
+%h1== VCF File #{ name }
+
+%p Use the filter options to subset the mutations and the save them with a particular name
+
+= table :table_id => "vcf" do
+  - vcf
+
+%label(for="#genotype_name") Genotype Name:
+%input#genotype_name(type="text" name="genotype_name")
+%input#save_genotype(type="submit") Save genotype (all unfiltered genomic mutations)
+
+:javascript
+  var organism = "#{organism}"
+  deffer(function(){
+    $('input#save_genotype').click(function(){
+      var table = $('table#vcf')
+      var table_url = table.attr('attr-url')
+      var filter = table.attr('attr-filter')
+      var name = $('input#genotype_name').val()
+
+      table_url = add_parameter(table_url, '_column', 'Genomic Mutation')
+      table_url = add_parameter(table_url, '_filter', filter)
+      table_url = add_parameter(table_url, '_format', 'values')
+      get_ajax({url:table_url}, function(data){
+        var variants = data;
+        var genotype_url = "/new_genotype/" + name
+        get_ajax({url: genotype_url, type: "POST", data: {organism: organism, variants: variants}}, function(){
+          window.location = "/"
+        })
+      })
+    })
+  })

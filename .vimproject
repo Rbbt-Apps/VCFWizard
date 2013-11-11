@@ -1,0 +1,17 @@
+VCFWizard=/$PWD filter="*.rb *.haml *.js *.sass *.css *.R *.ru" {
+ lib=lib {
+  vcf2table.rb
+ }
+ etc=etc{
+  app.d=app.d{
+   post.rb
+  }
+ }
+ www=www{
+  views=views{
+   main.haml
+   vcf.haml
+   new_vcf.haml
+  }
+ }
+}

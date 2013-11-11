@@ -1,0 +1,12 @@
+- genotype = load_genotype(name)
+%h1== Genotype File #{ name }
+
+= table do
+  - mutation_genes = Misc.process_to_hash(genotype){|list| list.genes}
+
+  - tsv = TSV.setup(genotype, :key_field => "Genomic Mutation", :fields => [], :type => :double, :namespace => genotype.organism)
+
+  - tsv.add_field "Ensembl Gene ID" do |mutation, values|
+    - mutation_genes[mutation]
+
+  - tsv

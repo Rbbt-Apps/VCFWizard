@@ -1,0 +1,4 @@
+= action_parameters nil, {:all_genotypes => all_genotypes}, {:method => 'POST', :enctype => 'multipart/form-data'} do
+  - genotypes = VCFWizard.genotype_files.glob('*').collect{|file| File.basename file}
+  - input :name, :string, "Name of they study", nil
+  - input :genotypes, :multiple, "Genotypes to add to study", nil, :choices => genotypes

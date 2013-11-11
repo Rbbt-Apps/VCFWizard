@@ -1,0 +1,48 @@
+%h1 Study generation wizard
+
+%p Add VCF files, filter them, extract the genotypes, and join them into studies
+
+%h3 VCF Files
+
+%a(href='/new_vcf') Upload a new VCF
+
+%ul
+  - VCFWizard.vcf_files.glob('*').each do |vcf_file|
+    - name = File.basename vcf_file
+    - tsv = load_vcf(name)
+    %li
+      %a(href="#{'/vcf/' << name}")= name
+      Variants: #{tsv.size},
+      Organism: #{tsv.namespace},
+      %a.button(href="#{'/remove_vcf/' << name}") remove
+
+%h3 Genotype Files
+
+%ul
+  - VCFWizard.genotype_files.glob('*').each do |genotype_file|
+    - name = File.basename genotype_file
+    - genotype = load_genotype(name)
+    %li
+      %a(href="#{'/genotype/' << name}")= name
+      Variants: #{genotype.length},
+      %a.button(href="#{'/remove_genotype/' << name}") remove
+
+%h3 Studies
+
+%a(href='/new_study') Compile a new study
+
+%ul
+  - VCFWizard.studies.glob('*').each do |study_dir|
+    - name = File.basename study_dir
+    - study = Study.setup(name)
+    - study.dir = Path.setup(study_dir)
+    %li
+      = study.link
+      Samples: #{study.samples.length},
+      %a.button(href="#{'/remove_study/' << name}") remove
+
+:sass
+  a.button
+    &:active, &:hover, &:visited
+      color: red
+    
