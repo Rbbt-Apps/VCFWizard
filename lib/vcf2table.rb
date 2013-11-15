@@ -50,7 +50,6 @@ module VCF2Table
         info = rest[info_pos - 5]
         subfield_values = {}
         info.split(";").each{|p| k,v = p.split "="; subfield_values[k] = v || "TRUE"}
-        ddd subfield_values
         extra_values = subfield_values.values_at *info_subfields.keys
         parts.concat extra_values
       end

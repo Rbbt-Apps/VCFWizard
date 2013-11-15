@@ -1,4 +1,11 @@
+$LOAD_PATH.unshift 'lib'
+require 'rbbt/workflow'
+require 'rbbt/entity/study'
 require 'vcf2table'
+
+Workflow.require_workflow "Appris"
+Workflow.require_workflow "MutEval"
+Workflow.require_workflow "ICGC"
 
 class VCFWizard
   class << self
@@ -126,7 +133,7 @@ class VCFWizard
     genotypes = genotypes.collect{|name| load_genotype name}
     organisms = genotypes.collect{|g| g.organism}.uniq
 
-    raise "Not all genotypes are aligned to the same organism(/build version)" if organisms.length > 1
+    raise "Not all genotypes are aligned to the same organism(/build version): #{organisms.inspect}" if organisms.length > 1
 
     create_study(name, genotypes, organisms.first)
 
@@ -140,7 +147,7 @@ class VCFWizard
   end
   helpers do
     def create_study(name, genotypes, organism)
-      dir = VCFWizard.studies[name]
+      dir = Study.study_dir[name].find(:user).sub('{USER}', user)
       Misc.in_dir(dir) do
         FileUtils.mkdir_p dir.genotypes
         genotypes.each do |genotype|
@@ -153,9 +160,20 @@ class VCFWizard
     end
 
     def remove_study(name)
-      FileUtils.rm_rf VCFWizard.studies[name].find
+      FileUtils.rm_rf Study.study_dir[name].find(:user).sub('{USER}', user)
     end
+  end
+
+  get '/kinases' do
+    template_render('kinases', {}, nil, :cache_type => :none)
   end
 end
 
-Study.study_dir = VCFWizard.studies
+study = "Esophageal_Adenocarcinoma-UK"
+
+path = Path.setup('', nil, nil, 
+                  :global => ICGC.root.find["{PATH}"], 
+                  :user => Rbbt.var.studies.find(:lib)["{USER}/{PATH}"], 
+                  :local => Rbbt.var.studies.local.find(:lib)["{PATH}"])
+
+Study.study_dir = path

@@ -32,7 +32,7 @@
 %a(href='/new_study') Compile a new study
 
 %ul
-  - VCFWizard.studies.glob('*').each do |study_dir|
+  - Study.study_dir.find(:user).sub('{USER}', user || 'public').glob('*').each do |study_dir|
     - name = File.basename study_dir
     - study = Study.setup(name)
     - study.dir = Path.setup(study_dir)
@@ -40,6 +40,16 @@
       = study.link
       Samples: #{study.samples.length},
       %a.button(href="#{'/remove_study/' << name}") remove
+
+%h3 ICGC Studies
+
+%ul
+  - Study.study_dir.find(:global).glob('*').each do |study_dir|
+    - name = File.basename(study_dir)
+    - study = Study.setup(name)
+    %li
+      = study.link
+      Samples: #{study.samples.length},
 
 :sass
   a.button

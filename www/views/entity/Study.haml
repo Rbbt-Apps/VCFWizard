@@ -1,0 +1,9 @@
+- study = entity
+- study.dir.sub!('{USER}', user)
+%h1 Study: #{ study }
+
+-# require 'study_workflow'
+-#%h2 Mutations
+-#= table do
+  - study.dir = ICGC.root[study] unless study.dir.exists?
+  - study.job(:mutation_overview).clean.run
