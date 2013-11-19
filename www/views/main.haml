@@ -39,6 +39,7 @@
     %li
       = study.link
       Samples: #{study.samples.length},
+      Variants: #{study.cohort.metagenotype.length},
       %a.button(href="#{'/remove_study/' << name}") remove
 
 %h3 ICGC Studies
@@ -50,6 +51,7 @@
     %li
       = study.link
       Samples: #{study.samples.length},
+    -#  Variants: #{study.cohort.metagenotype.length},
 
 :sass
   a.button

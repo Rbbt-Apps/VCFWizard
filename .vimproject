@@ -11,6 +11,9 @@ VCFWizard=/$PWD filter="*.rb *.haml *.js *.sass *.css *.R *.ru" {
    post.rb
   }
  }
+ share=share{
+  gene_ages
+ }
  www=www{
   views=views{
    main.haml

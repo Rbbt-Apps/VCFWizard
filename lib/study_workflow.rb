@@ -1,3 +1,4 @@
+Workflow.require_workflow "KinMut"
 
 module StudyWorkflow
 
@@ -43,7 +44,6 @@ module StudyWorkflow
     log :mutated_isoforms, "Inferring AA mutations in principal isoforms"
     mutation_principal_isoform = Misc.process_to_hash(mutations){|m| 
       all_mis = m.mutated_isoforms
-      #all_mis.zip(m.genes.principal_isoforms).collect{|mis,pis| 
       m_pis = m.genes.collect{|list| appris_pis.values_at *list}
       all_mis.zip(m_pis).collect{|mis,pis| 
         next if mis.nil? or pis.nil? or mis.empty? or pis.compact.empty?
@@ -54,9 +54,12 @@ module StudyWorkflow
 
     log :damage, "Obtaining damage scores"
     all_mis = mutation_principal_isoform.values.flatten.compact.uniq
-    isoform_scores = MutEval.job(:dbNSFP, study, :mutations => all_mis, :method => nil).clean.run
-    isoform_MA_score = MutEval.job(:dbNSFP, study, :mutations => all_mis, :method => 'sift').clean.run
-    isoform_SIFT_score = MutEval.job(:dbNSFP, study, :mutations => all_mis, :method => 'mutation_assessor').clean.run
+
+    isoform_scores = MutEval.job(:dbNSFP, study, :mutations => all_mis, :method => nil).run
+    converted_scores = isoform_scores.fields.select{|f| f =~ /converted/ } 
+    isoform_scores = isoform_scores.slice(converted_scores)
+    isoform_MA_score = MutEval.job(:dbNSFP, study, :mutations => all_mis, :method => 'sift').run
+    isoform_SIFT_score = MutEval.job(:dbNSFP, study, :mutations => all_mis, :method => 'mutation_assessor').run
 
     log :registering, "Registering results"
     tsv.add_field "Mutated Isoform" do |mutation,values|
@@ -83,7 +86,6 @@ module StudyWorkflow
       mi = values["Mutated Isoform"].first
       scores = isoform_scores[mi]
 
-      ddd scores if scores
       avg = scores.nil? ? nil : Misc.mean(scores.flatten.compact.collect{|s| s.to_f}.reject{|s| s == -999})
       [avg]
     end
@@ -92,5 +94,29 @@ module StudyWorkflow
     end
 
     tsv
+  end
+
+  dep :mutation_overview
+  task :kinase_analysis => :tsv do
+    tsv = TSV.setup({}, :key_field => "Ensembl Gene ID", :fields => ["Genomic Mutation", "Mutated isoform", "KinMut"])
+    mutation_overview = step(:mutation_overview).load
+
+    all_mis = mutation_overview.slice("Mutated Isoform").
+      values.compact.flatten.uniq
+    MutatedIsoform.setup(all_mis, organism)
+    all_mis = all_mis.select_by(:consequence){|c| c == "MISS-SENSE"}
+
+    mi2kinmut = Misc.process_to_hash(all_mis){|mis| 
+      ddd mis
+      kinmut = KinMut.job(:predict, study, :list => mis).run 
+      fff kinmut
+      exit
+    }
+
+    mutation_overview.through do |mutation, values|
+      mis = values["Mutated Isoform"]
+      mis
+      tsv[mutation] = mi2kinmut
+    end
   end
 end

@@ -147,7 +147,7 @@ class VCFWizard
   end
   helpers do
     def create_study(name, genotypes, organism)
-      dir = Study.study_dir[name].find(:user).sub('{USER}', user)
+      dir = Study.study_dir[name].find(:user).sub('{USER}', user || 'guest')
       Misc.in_dir(dir) do
         FileUtils.mkdir_p dir.genotypes
         genotypes.each do |genotype|
@@ -160,7 +160,7 @@ class VCFWizard
     end
 
     def remove_study(name)
-      FileUtils.rm_rf Study.study_dir[name].find(:user).sub('{USER}', user)
+      FileUtils.rm_rf Study.study_dir[name].find(:user).sub('{USER}', user || 'guest')
     end
   end
 
