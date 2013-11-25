@@ -31,31 +31,54 @@ module VCF2Table
   end
 
   def self.open(vcf)
-    tsv = TSV.setup({}, :key_field => "Genomic Mutation", :fields => [])
     header, line = header vcf
 
-    fields = line.sub(/^#/,'').split(/\s+/)
-
-    info_subfields = header["INFO"]
-    if info_subfields
-      fields.concat info_subfields.keys
-      info_pos = fields.index "INFO"
+    if line =~ /#/
+      fields = line.sub(/^#/,'').split(/\s+/)
+      line = vcf.gets
+    else
+      fields = %w(CHROM POS ID REF ALT QUAL FILTER INFO FORMAT Sample)[0..line.split(/\s+/).length-1]
     end
 
-    tsv.fields = fields
-    tsv.key_field = "Genomic Mutation"
-    while line = vcf.gets
+    tsv = TSV.setup({}, :key_field => "Genomic Mutation", :fields => fields)
+    while line
       chr, position, id, ref, alt, *rest = parts = line.split(/\s+/)
-      if info_subfields
-        info = rest[info_pos - 5]
-        subfield_values = {}
-        info.split(";").each{|p| k,v = p.split "="; subfield_values[k] = v || "TRUE"}
-        extra_values = subfield_values.values_at *info_subfields.keys
-        parts.concat extra_values
-      end
       position, alt = Misc.correct_vcf_mutation(position.to_i, ref, alt)
       mutation = [chr, position.to_s, alt * ","] * ":"
       tsv[mutation] = parts
+      line = vcf.gets
+    end
+
+    # Unfold FORMAT fields for each sample
+    if format_pos = tsv.fields.index("FORMAT")
+      format_fields = tsv[tsv.keys.first][format_pos].split(":")
+
+      sample_fields = tsv.fields.values_at *(format_pos+1..tsv.fields.length-1).to_a
+
+      format_fields.each_with_index do |ifield,i|
+        sample_fields.each_with_index do |sfield,j|
+          tsv.add_field "#{sfield}:#{ ifield }" do |mutation, values|
+            values[format_pos+1+j].split(":")[i]
+          end
+        end
+      end
+    end
+
+    # Unfold INFO fields
+    if info_pos = tsv.fields.index("INFO")
+      info_fields = tsv.values.collect{|v| v[info_pos].split(";").collect{|p| p.partition("=").first}}.compact.flatten.uniq.sort
+
+      info_fields.each do |ifield|
+        tsv.add_field "INFO:#{ ifield }" do |mutation, values|
+          v = values[info_pos].split(";").select{|p| p.partition("=").first == ifield}.first
+          if v
+            field, sep, value = v.partition "="
+            sep.empty? ? "true" : value
+          else
+            "false"
+          end
+        end
+      end
     end
 
     tsv

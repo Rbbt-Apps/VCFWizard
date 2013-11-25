@@ -165,11 +165,9 @@ class VCFWizard
   end
 
   get '/kinases' do
-    template_render('kinases', {}, nil, :cache_type => :none)
+    template_render('kinases', {}, "Kinases", :cache_type => :async)
   end
 end
-
-study = "Esophageal_Adenocarcinoma-UK"
 
 path = Path.setup('', nil, nil, 
                   :global => ICGC.root.find["{PATH}"], 
